@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GC单位转换</title>
+    
+    <script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+    
+    <style>
+
+        h1 {color:#E215C3;}
+
+        label{
+            cursor: pointer;
+            display: inline-block;
+            padding: 3px 6px;
+            text-align: right;
+            width: 150px;
+            vertical-align: top;
+        }
+
+        input{
+            font-size: inherit;
+        }
+
+    </style>
+    
+    <script type="text/javascript">
+        function cal(k_str) {
+            var num = parseInt(k_str, 10);
+            if (num <= 1024)
+                return num + "K";
+            if (num > 1024)
+                return  (num / 1024) + "M";
+            if (num > 1024 * 1024)
+                return (num / (1024 *1024)) + "G";
+        }
+        
+        function format() {
+            var text = $("#gc").val();
+            var arr = text.split("\n");
+            
+            var patt = /([0-9]+)K/g;
+            
+            var result = "";
+            
+            arr.forEach((a) => {
+                if(!a) {
+                    return;
+                }
+                
+                var k_str;
+                var b = a;
+                
+                while ((k_str = patt.exec(a)) != null)  {
+                    b = b.replace(k_str[0], cal(k_str));
+                }
+                
+                result += b + "\n";
+            });
+            
+            
+            $("#format").val(result);
+        }
+    </script>
+	
+</head>
+<body>
+
+    <h1>
+        <input type="button" style="color: #E215C3;" value="format" onclick="format()">
+    </h1>
+    
+    <p>
+        <label>gc.log :</label>
+        <textarea id="gc" placeholder="请输入内容"  style="width: 1200px;" rows="20"></textarea>
+    </p>
+    
+    <p>
+        <label>format :</label>
+        <textarea id="format" placeholder="这里是结果"  readOnly style="width: 1200px;" rows="50"></textarea>
+    </p>
+    
+       
+    
+   
+    
+</body>
+</html>
