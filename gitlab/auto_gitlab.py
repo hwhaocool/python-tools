@@ -3,24 +3,29 @@
 import requests
 import pprint
 import yaml
+import os
 
 pp = pprint.PrettyPrinter(indent=2)
 
-private_gitlab__token = None
-
 # endsWith /api/v3
-gitlab_url = None
-
-headers = None
 
 name_id_map = {}
 
 def initConfig():
-    f = open("config.yaml", 'r', encoding="utf-8")
+
+    head, tail = os.path.split(os.path.realpath(__file__))
+    yaml_path = os.path.join(head, "config.yaml")
+
+    f = open(yaml_path, 'r', encoding="utf-8")
     file_data = f.read()
     f.close()
 
-    data = yaml.load(file_data)
+    data = yaml.load(file_data, Loader=yaml.SafeLoader)
+
+    global private_gitlab__token
+    global gitlab_url
+    global headers
+
     private_gitlab__token = data['private_token']
     gitlab_url = data['gitlab_url']
 
@@ -30,8 +35,6 @@ def initProjectId():
 
     temp_url = "{}{}".format(gitlab_url, "/projects?simple=true&per_page=100")
     r = requests.get(temp_url, headers=headers)
-
-    print(r)
 
     for data in r.json():
         # print()
@@ -44,8 +47,9 @@ def initProjectId():
 # print(r.json())
 
 def init():
-    initProjectId()
     initConfig()
+
+    initProjectId()
 
 # 创建分支
 def createBranch(project_name, src_name, dst_name):
@@ -133,11 +137,14 @@ def acceptMR(project_name, src_name, dst_name, merge_request_id):
     return True
 
 def autoMerge(project_name, src_name, dst_name=None, branch_name=None, which_2_branch=None):
-    if dst_name is None:
+    if dst_name is not None:
         # src -> dst
+        # print("src -> dst")
         createMR(project_name, src_name, dst_name, True)
 
-    if branch_name not None and which_2_branch not None:
+    if branch_name  is not None and which_2_branch  is not None:
+
+        # print("which_2_branch -> branch -> develop -> master")
 
         # which_2_branch -> branch_name
         createMR(project_name, which_2_branch, branch_name, True)
@@ -152,3 +159,10 @@ def autoMerge(project_name, src_name, dst_name=None, branch_name=None, which_2_b
 init()
 
 
+# demo
+
+# createMR("cayenne", "hotfix-9.0.1", "branch_9.1", True)
+
+autoMerge("server-api", "hotfix-7.8.1", "hotfix-7.9.1", "branch_8.0", "hotfix-7.9.1")
+
+# autoMerge("shikamaru-server", "hotfix-6.7.1", "hotfix-6.8.1", "branch_6.9", "hotfix-6.8.1")
