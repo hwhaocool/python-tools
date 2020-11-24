@@ -85,7 +85,7 @@ def createMR(project_name, src_name, dst_name, auto_merge=False):
         print("create MR error, project_name {}, src_name {}, dst_name{}".format(project_name, src_name, dst_name))
         print(r.status_code)
         print(r.text)
-        return
+        return False
     
     merge_request_id = r.json()['id']
 
@@ -95,11 +95,13 @@ def createMR(project_name, src_name, dst_name, auto_merge=False):
         # 打印日志
         print("[{}, {} -> {}] create MR success, and accept MR {},  merge_request_id {}".format(project_name, src_name, dst_name, \
             "success" if accept_result else "fail", merge_request_id))
+
+        return accept_result
     else:
         # 打印日志
         print("[{}, {} -> {}] create MR success,  merge_request_id {}".format(project_name, src_name, dst_name, merge_request_id))
     
-    return merge_request_id
+    return True
    
 def closeMR():
     print()
@@ -131,7 +133,7 @@ def acceptMR(project_name, src_name, dst_name, merge_request_id):
         return False
 
     if 200 == r.status_code:
-        print("acceptMR success, project_name {}, merge_request_id {}".format(project_name, merge_request_id))
+        # print("acceptMR success, project_name {}, merge_request_id {}".format(project_name, merge_request_id))
         return True
 
     return True
@@ -140,20 +142,28 @@ def autoMerge(project_name, src_name, dst_name=None, branch_name=None, which_2_b
     if dst_name is not None:
         # src -> dst
         # print("src -> dst")
-        createMR(project_name, src_name, dst_name, True)
+        result = createMR(project_name, src_name, dst_name, True)
+        if not result:
+            return
 
     if branch_name  is not None and which_2_branch  is not None:
 
         # print("which_2_branch -> branch -> develop -> master")
 
         # which_2_branch -> branch_name
-        createMR(project_name, which_2_branch, branch_name, True)
+        result = createMR(project_name, which_2_branch, branch_name, True)
+        if not result:
+            return
 
         # branch_name -> develop
-        createMR(project_name, branch_name, "develop", True)
+        result = createMR(project_name, branch_name, "develop", True)
+        if not result:
+            return
 
         # which_2_branch -> master
-        createMR(project_name, which_2_branch, "master", True)
+        result = createMR(project_name, which_2_branch, "master", True)
+        if not result:
+            return
 
 # 初始化项目
 init()
@@ -164,5 +174,10 @@ init()
 # createMR("cayenne", "hotfix-9.0.1", "branch_9.1", True)
 
 autoMerge("server-api", "hotfix-7.8.1", "hotfix-7.9.1", "branch_8.0", "hotfix-7.9.1")
+
+# autoMerge("ms-team-service", "hotfix-9.1.1", "hotfix-9.2.1", "branch_9.3", "hotfix-9.2.1")
+
+# autoMerge("ms-team-task", "hotfix-9.1.1", "hotfix-9.2.1", "branch_9.3", "hotfix-9.2.1")
+# autoMerge("ms-team-service", "hotfix-9.1.1", "branch_9.3", "branch_9.3", "hotfix-9.2.1")
 
 # autoMerge("shikamaru-server", "hotfix-6.7.1", "hotfix-6.8.1", "branch_6.9", "hotfix-6.8.1")
