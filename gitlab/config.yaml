@@ -1,0 +1,6 @@
+
+# your private token
+private_token: xxx
+
+# your gitlab, endWith /api/v3
+gitlab_url: http://192.168.2.222/api/v3
