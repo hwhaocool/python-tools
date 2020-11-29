@@ -3,4 +3,18 @@
 private_token: xxx
 
 # your gitlab, endWith /api/v3
-gitlab_url: http://192.168.2.222/api/v3
+gitlab_url: http://{host}/api/v3
+
+config:
+  - name: your_project
+    pipeline:
+      hotfix-9.1.1: 
+        - hotfix-9.2.1:
+            - branch_9.3:
+              - develop
+            - product
+        - master
+  - name: project-2
+    pipeline:
+      branch_9.3:
+        - develop
