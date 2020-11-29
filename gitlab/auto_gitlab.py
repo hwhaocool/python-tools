@@ -4,10 +4,9 @@ import requests
 import pprint
 import yaml
 import os
+import sys
 
 pp = pprint.PrettyPrinter(indent=2)
-
-# endsWith /api/v3
 
 name_id_map = {}
 
@@ -22,6 +21,11 @@ def initConfig():
 
     data = yaml.load(file_data, Loader=yaml.SafeLoader)
 
+    initGitlab(data)
+    initBranchPipeLine(data)
+
+# 初始化 gitlab 相关
+def initGitlab(data):
     global private_gitlab__token
     global gitlab_url
     global headers
@@ -31,20 +35,64 @@ def initConfig():
 
     headers = {'PRIVATE-TOKEN': private_gitlab__token}
 
+# 初始化 代码分支流水线相关
+def initBranchPipeLine(data):
+    global project_branch_dict
+    project_branch_dict = {}
+
+    config_list = data['config']
+    for config in config_list:
+        name = config['name']
+
+        pipeline = config['pipeline']
+
+        pipe_list = analysis(pipeline)
+
+        # key 是 project name, value 是一个二元数组列表
+        print(name)
+        project_branch_dict[name] = pipe_list
+
+# 分析 项目的合并配置
+def analysis(pipeline):
+    pipe_list = []
+
+    for src, dst in pipeline.items():
+        # 数组
+        # print(dst)
+
+        for a in dst:
+            if isinstance(a, dict):
+                append(pipe_list, src, a)
+            elif isinstance(a, str):
+                pipe_list.append((src, a))
+
+    # 打印 pipeline
+    # pp.pprint(pipe_list)
+    return pipe_list
+
+# 是一个递归函数，递归分析
+def append(pipe_list, src_branch, branch_dict):
+    for key, value in branch_dict.items():
+
+        # value 是数组
+        # src --> key  可以组成一个组合
+        pipe_list.append((src_branch, key))
+
+        for a in value:
+            if isinstance(a, dict):
+                append(pipe_list, key, a)
+            elif isinstance(a, str):
+                pipe_list.append((key, a))
+
 def initProjectId():
 
     temp_url = "{}{}".format(gitlab_url, "/projects?simple=true&per_page=100")
     r = requests.get(temp_url, headers=headers)
 
     for data in r.json():
-        # print()
         name = data['name']
         p_id = data['id']
         name_id_map[name] = p_id
-
-    pp.pprint(name_id_map)
-    print(len(name_id_map))
-# print(r.json())
 
 def init():
     initConfig()
@@ -165,19 +213,35 @@ def autoMerge(project_name, src_name, dst_name=None, branch_name=None, which_2_b
         if not result:
             return
 
-# 初始化项目
-init()
+def autoMerge2(project_name):
 
+    pipeline = project_branch_dict.get(project_name, None)
+    if pipeline is None:
+        print("error! project [{}] do not exist in config.yaml".format(project_name))
+        return
 
-# demo
+    for item in pipeline:
+        src_name = item[0]
+        dst_name = item[1]
+        result = createMR(project_name, src_name, dst_name, True)
+        if not result:
+            return
 
-# createMR("cayenne", "hotfix-9.0.1", "branch_9.1", True)
+def printUsage():
+    print("you missing project name in cmd")
+    print("demo: python auto_gitlab.py my_project_name")
 
-autoMerge("server-api", "hotfix-7.8.1", "hotfix-7.9.1", "branch_8.0", "hotfix-7.9.1")
+def start():
+    if len(sys.argv) < 2:
+        printUsage()
+        return
 
-# autoMerge("ms-team-service", "hotfix-9.1.1", "hotfix-9.2.1", "branch_9.3", "hotfix-9.2.1")
+    project_name = sys.argv[1]
 
-# autoMerge("ms-team-task", "hotfix-9.1.1", "hotfix-9.2.1", "branch_9.3", "hotfix-9.2.1")
-# autoMerge("ms-team-service", "hotfix-9.1.1", "branch_9.3", "branch_9.3", "hotfix-9.2.1")
+    # 初始化项目
+    init()
+    
+    autoMerge2(project_name) 
 
-# autoMerge("shikamaru-server", "hotfix-6.7.1", "hotfix-6.8.1", "branch_6.9", "hotfix-6.8.1")
+# 开始
+start()
