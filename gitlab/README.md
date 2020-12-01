@@ -12,7 +12,8 @@ private_token: Qxxxx
 gitlab_url: host/api/v3
 
 config:
-  - name: your-project-name
+  - name: hello
+    project_name: your-project-name
     pipeline:
       hotfix-9.1.1: 
         - hotfix-9.2.1:
@@ -27,7 +28,8 @@ config:
 `gitlab_url` 就是 `gitlab 域名` + `/api/v3`  
 `config` 就是 代码合并的配置  
 
-`name` 项目名称，和 `gitlab` 要对应起来  
+`name` 配置名称，唯一的  
+`project_name` 项目名称，和 `gitlab` 要对应起来  
 `pipeline` 就是合并的流水线，上面的实例最后的流程是：
 
 ```
@@ -43,5 +45,5 @@ hotfix-9.1.1 -> master
 ## 使用
 
 ```
-python auto_gitlab.py my_project_name
+python auto_gitlab.py hello
 ```
