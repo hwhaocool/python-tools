@@ -21,8 +21,9 @@ def initConfig():
 
     data = yaml.load(file_data, Loader=yaml.SafeLoader)
 
-    initGitlab(data)
     initBranchPipeLine(data)
+
+    initGitlab(data)
 
 # 初始化 gitlab 相关
 def initGitlab(data):
@@ -42,15 +43,34 @@ def initBranchPipeLine(data):
 
     config_list = data['config']
     for config in config_list:
+
+        if not config.__contains__("name"):
+            print("Invalid config, name is required")
+            exit(0)
+
         name = config['name']
+        if project_branch_dict.__contains__(name):
+            print("Invalid config, name [{}] is duplicate".format(name))
+            exit(0)
+
+        if not config.__contains__("project_name"):
+            print("Invalid config, [{}] project_name is required".format(name))
+            exit(0)
+
+        project_name = config['project_name']
 
         pipeline = config['pipeline']
 
+        # 是一个二元数组列表
         pipe_list = analysis(pipeline)
 
-        # key 是 project name, value 是一个二元数组列表
-        print(name)
-        project_branch_dict[name] = pipe_list
+        temp_dict = {}
+        temp_dict["project_name"] = project_name
+        temp_dict["pipeline"] = pipe_list
+
+        # key 是 project name, value 是dict， 有两个key，分别是项目名称和流水线
+        # print(name)
+        project_branch_dict[name] = temp_dict
 
 # 分析 项目的合并配置
 def analysis(pipeline):
@@ -93,6 +113,8 @@ def initProjectId():
         name = data['name']
         p_id = data['id']
         name_id_map[name] = p_id
+
+    # pp.pprint(r.json())
 
 def init():
     initConfig()
@@ -186,39 +208,15 @@ def acceptMR(project_name, src_name, dst_name, merge_request_id):
 
     return True
 
-def autoMerge(project_name, src_name, dst_name=None, branch_name=None, which_2_branch=None):
-    if dst_name is not None:
-        # src -> dst
-        # print("src -> dst")
-        result = createMR(project_name, src_name, dst_name, True)
-        if not result:
-            return
+def autoMerge2(config_name):
 
-    if branch_name  is not None and which_2_branch  is not None:
-
-        # print("which_2_branch -> branch -> develop -> master")
-
-        # which_2_branch -> branch_name
-        result = createMR(project_name, which_2_branch, branch_name, True)
-        if not result:
-            return
-
-        # branch_name -> develop
-        result = createMR(project_name, branch_name, "develop", True)
-        if not result:
-            return
-
-        # which_2_branch -> master
-        result = createMR(project_name, which_2_branch, "master", True)
-        if not result:
-            return
-
-def autoMerge2(project_name):
-
-    pipeline = project_branch_dict.get(project_name, None)
-    if pipeline is None:
-        print("error! project [{}] do not exist in config.yaml".format(project_name))
+    config = project_branch_dict.get(config_name, None)
+    if config is None:
+        print("error! project [{}] do not exist in config.yaml".format(config_name))
         return
+
+    project_name = config["project_name"]
+    pipeline = config["pipeline"]
 
     for item in pipeline:
         src_name = item[0]
@@ -228,20 +226,20 @@ def autoMerge2(project_name):
             return
 
 def printUsage():
-    print("you missing project name in cmd")
-    print("demo: python auto_gitlab.py my_project_name")
+    print("you missing config name in cmd")
+    print("demo: python auto_gitlab.py hello")
 
 def start():
     if len(sys.argv) < 2:
         printUsage()
         return
 
-    project_name = sys.argv[1]
+    config_name = sys.argv[1]
 
     # 初始化项目
     init()
     
-    autoMerge2(project_name) 
+    autoMerge2(config_name) 
 
 # 开始
 start()
