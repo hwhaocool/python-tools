@@ -4,17 +4,11 @@ import os
 import json
 import time
 
-import sys  
-
-reload(sys)  
-sys.setdefaultencoding('utf8')   
-
-
 ali_log_file = raw_input("input full file path:")
 
 ali_log_file_path, ali_log_file_name =  os.path.split(os.path.realpath(ali_log_file))
 
-print("分割之后是： ")
+print(" 分割之后是： ")
 print(ali_log_file_path)
 print(ali_log_file_name)
 
@@ -40,6 +34,5 @@ for data in f.readlines():
     # break
 
 f.close()
-
 
 gc_log.close()
